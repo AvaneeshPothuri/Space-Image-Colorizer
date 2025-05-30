@@ -73,7 +73,6 @@ Space Image Colorizer/
 ├── models/ # Model definition
 │ └── colorize_unet.py
 ├── scripts/ # Training scripts
-├── data/ # Dataset (optional, if included)
 ├── requirements.txt # Python dependencies
 ├── README.md # This file
 ```
