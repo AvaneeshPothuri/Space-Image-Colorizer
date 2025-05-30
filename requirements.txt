@@ -1,0 +1,6 @@
+torch
+torchvision
+opencv-python
+numpy
+scikit-image
+flask==2.3.2

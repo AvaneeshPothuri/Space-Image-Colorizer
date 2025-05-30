@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Image Colorizer</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #181c20; color: #f0f0f0; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 40px auto; background: #23272b; border-radius: 12px; padding: 32px 24px; box-shadow: 0 4px 24px #0004; }
+        h1 { text-align: center; font-size: 2.2em; margin-bottom: 16px; }
+        form { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 32px; }
+        input[type="file"] { background: #23272b; color: #f0f0f0; border: 1px solid #444; border-radius: 6px; padding: 8px; }
+        button { background: #4e8cff; color: #fff; border: none; border-radius: 6px; padding: 10px 24px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #326fd1; }
+        .images { display: flex; justify-content: space-around; margin-top: 32px; gap: 24px; }
+        .img-col { flex: 1; text-align: center; }
+        img { max-width: 100%; border-radius: 8px; border: 2px solid #333; margin-top: 12px; background: #222; }
+        .caption { margin-top: 8px; font-size: 1.1em; color: #b0b0b0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Space Image Colorizer</h1>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Colorize</button>
+        </form>
+        {% if upload %}
+        <div class="images">
+            <div class="img-col">
+                <div class="caption"><b>Original (Grayscale)</b></div>
+                <img src="{{ url_for('static', filename='uploads/' + upload) }}" alt="Original">
+            </div>
+            <div class="img-col">
+                <div class="caption"><b>Colorized</b></div>
+                <img src="{{ url_for('static', filename='results/' + result) }}" alt="Colorized">
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
