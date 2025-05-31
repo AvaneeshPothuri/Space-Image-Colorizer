@@ -112,7 +112,11 @@ def handle_requests():
         if request.method == 'POST':
             if 'file' not in request.files:
                 return "No file uploaded", 400
-                
+
+            print("Starting POST request handling...")
+            print("Memory usage at start:", log_memory_usage())
+            start_time = time.time()
+
             file = request.files['file']
             if not file or file.filename == '':
                 return "Empty file submitted", 400
@@ -134,6 +138,10 @@ def handle_requests():
             # Schedule cleanup
             delete_file_after_delay(upload_path, 10)
             delete_file_after_delay(result_path, 10)
+
+            print("POST request completed in {:.2f}s".format(time.time() - start_time))
+            print("Memory usage at end:", log_memory_usage())
+
             
             return render_template('index.html',
                                 upload=file.filename,
