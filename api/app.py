@@ -29,9 +29,6 @@ app.config['RESULT_FOLDER'] = 'static/results'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
 
-# Limit file upload size (e.g., 2 MB)
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2 MB
-
 # Load the model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = UNetColorize().to(device)
