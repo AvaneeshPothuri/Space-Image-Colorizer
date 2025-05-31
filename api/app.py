@@ -59,44 +59,45 @@ def colorize_image(gray_img_path, result_path):
     try:
         print("Starting colorization process")
         start_time = time.time()
-        
-        # Read and verify image
-        print("Reading image from:", gray_img_path)
+        print("Initial memory:", log_memory_usage())
+
+        # Read image
         gray = cv2.imread(gray_img_path, cv2.IMREAD_GRAYSCALE)
         if gray is None:
             raise ValueError("Could not read image file")
-            
-        # Preprocess
-        print("Original size:", gray.shape, "| Memory:", log_memory_usage())
+
+        # Resize early to reduce memory
         gray = cv2.resize(gray, (256, 256)) / 255.0
-        
-        # Convert to tensor
-        print("Converting to tensor...")
-        gray_tensor = torch.FloatTensor(gray[None, None, ...]).to(device)
-        
-        # Model inference
-        print("Running model inference...")
+
+        # Convert to tensor and process
         with torch.no_grad():
+            gray_tensor = torch.FloatTensor(gray[None, None, ...]).to(device)
             pred_ab = model(gray_tensor).cpu().numpy()[0]
-            
+            del gray_tensor  # Explicitly delete tensor
+
         # Post-process
-        print("Post-processing...")
         pred_ab = (pred_ab + 1) * 128
         pred_ab = pred_ab.transpose(1, 2, 0).astype(np.uint8)
         
-        # Create LAB image
+        # Build LAB image
         L = (gray * 255).astype(np.uint8)
+        del gray  # Free memory
+        
         LAB_pred = np.zeros((256, 256, 3), dtype=np.uint8)
         LAB_pred[:, :, 0] = L
         LAB_pred[:, :, 1:] = pred_ab
         
-        # Convert and save
-        print("Saving result...")
+        # Save result
         colorized_bgr = cv2.cvtColor(LAB_pred, cv2.COLOR_LAB2BGR)
         cv2.imwrite(result_path, colorized_bgr)
-        
-        print("Colorization completed in {:.2f}s | Memory: {}".format(time.time()-start_time, log_memory_usage()))
-        
+
+        # Force garbage collection
+        import gc
+        gc.collect()
+
+        print(f"Colorization completed in {time.time()-start_time:.2f}s")
+        print("Final memory:", log_memory_usage())
+
     except Exception as e:
         print("Colorization failed:", str(e))
         traceback.print_exc()
