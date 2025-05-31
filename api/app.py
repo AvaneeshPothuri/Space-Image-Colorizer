@@ -21,7 +21,7 @@ def log_memory_usage():
     process = psutil.Process(os.getpid())
     return "{:.2f} MB".format(process.memory_info().rss / 1024 / 1024)
 
-def delete_file_after_delay(file_path, delay=10):
+def delete_file_after_delay(file_path, delay=600):
     def remove_file():
         try:
             os.remove(file_path)
