@@ -36,7 +36,20 @@ def delete_file_after_delay(file_path, delay=60):  # Increased delay to 60 secon
     timer.start()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React frontend
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "https://space-image-colorizer.netlify.app",
+                "http://localhost:5173"                  
+            ],
+            "methods": ["POST", "GET", "OPTIONS"],
+            "allow_headers": ["Content-Type"]
+        }
+    },
+    supports_credentials=True
+)
 
 # Configuration
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -175,3 +188,19 @@ if __name__ == '__main__':
         use_reloader=False,
         threaded=True
     )
+
+@app.after_request
+def add_cors_headers(response):
+    allowed_origins = [
+        "https://space-image-colorizer.netlify.app",
+        "http://localhost:5173"
+    ]
+    origin = request.headers.get('Origin', '')
+    
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    
+    return response
