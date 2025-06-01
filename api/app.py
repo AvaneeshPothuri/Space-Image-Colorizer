@@ -4,25 +4,27 @@ import os
 current_file_path = os.path.abspath(__file__)      
 api_directory = os.path.dirname(current_file_path)     
 project_root = os.path.dirname(api_directory)
-
-model_path = os.path.join(project_root, 'models', 'saved_models', 'colorize_epoch_5.pth')
 sys.path.insert(0, project_root)
 
 import threading
 import traceback
 import time
 import psutil
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import cv2
 import numpy as np
 import torch
 from models.colorize_unet import UNetColorize
 
+model_path = os.path.join(project_root, 'models', 'saved_models', 'colorize_epoch_5.pth')
+sys.path.insert(0, project_root)
+
 def log_memory_usage():
     process = psutil.Process(os.getpid())
     return f"{process.memory_info().rss / 1024 / 1024:.2f} MB"
 
-def delete_file_after_delay(file_path, delay=10):
+def delete_file_after_delay(file_path, delay=60):  # Increased delay to 60 seconds
     def remove_file():
         try:
             if os.path.exists(file_path):
@@ -34,6 +36,7 @@ def delete_file_after_delay(file_path, delay=10):
     timer.start()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for React frontend
 
 # Configuration
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -99,10 +102,12 @@ def colorize_image(gray_img_path, result_path):
         LAB_pred[:, :, 0] = L
         LAB_pred[:, :, 1:] = pred_ab
 
+        # Convert and save
         print("Saving result...")
         colorized_bgr = cv2.cvtColor(LAB_pred, cv2.COLOR_LAB2BGR)
         cv2.imwrite(result_path, colorized_bgr)
 
+        # Force garbage collection
         import gc
         gc.collect()
 
@@ -114,49 +119,51 @@ def colorize_image(gray_img_path, result_path):
         traceback.print_exc()
         raise
 
-@app.route('/', methods=['GET', 'POST'])
-def handle_requests():
+@app.route('/api/colorize', methods=['POST'])
+def handle_colorization():
     try:
-        print(f"Received {request.method} request")
-        if request.method == 'POST':
-            if 'file' not in request.files:
-                return "No file uploaded", 400
+        print("Received API request")
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
 
-            file = request.files['file']
-            if not file or file.filename == '':
-                return "Empty file submitted", 400
+        file = request.files['file']
+        if not file or file.filename == '':
+            return jsonify({'error': 'Empty file submitted'}), 400
 
-            if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                return "Invalid file type", 400
+        if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            return jsonify({'error': 'Invalid file type'}), 400
 
-            upload_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            result_path = os.path.join(app.config['RESULT_FOLDER'], 'colorized_' + file.filename)
+        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        result_path = os.path.join(app.config['RESULT_FOLDER'], 'colorized_' + file.filename)
 
-            print(f"Saving upload to: {upload_path}")
-            file.save(upload_path)
-            print(f"File size: {os.path.getsize(upload_path)} bytes")
+        print(f"Saving upload to: {upload_path}")
+        file.save(upload_path)
+        print(f"File size: {os.path.getsize(upload_path)} bytes")
 
-            print("Starting colorization...")
-            colorize_image(upload_path, result_path)
-            print("Colorization completed successfully")
+        print("Starting colorization...")
+        colorize_image(upload_path, result_path)
+        print("Colorization completed successfully")
 
-            # Schedule cleanup
-            delete_file_after_delay(upload_path, 30)  # 30 seconds delay
-            delete_file_after_delay(result_path, 30)
+        # Schedule cleanup
+        delete_file_after_delay(upload_path, 60)
+        delete_file_after_delay(result_path, 60)
 
-            return render_template('index.html',
-                                upload=file.filename,
-                                result='colorized_' + file.filename)
-
-        return render_template('index.html')
+        return jsonify({
+            'upload': f'/static/uploads/{file.filename}',
+            'result': f'/static/results/colorized_{file.filename}'
+        })
 
     except Exception as e:
         print(f"Critical error: {str(e)}")
         traceback.print_exc()
-        return f"Server Error: {str(e)}", 500
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/')
+def health_check():
+    return jsonify({'status': 'healthy', 'service': 'Space Image Colorizer'})
 
 if __name__ == '__main__':
-    print("Starting local development server...")
+    print("Starting server...")
     print(f"Working directory: {os.getcwd()}")
     print(f"Available devices: CPU{' + CUDA' if torch.cuda.is_available() else ''}")
     print(f"Model architecture:\n{model}")
