@@ -22,12 +22,12 @@ function App() {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/colorize', formData, {
+      const response = await axios.post('https://space-image-colorizer.onrender.com/api/colorize', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const uploadedUrl = `http://localhost:8080${response.data.upload}`;
-      const colorizedUrl = `http://localhost:8080${response.data.result}`;
+      const uploadedUrl = `https://space-image-colorizer.onrender.com${response.data.upload}`;
+      const colorizedUrl = `https://space-image-colorizer.onrender.com${response.data.result}`;
 
       setUploadedImage(uploadedUrl);
       setColorizedImage(colorizedUrl);
