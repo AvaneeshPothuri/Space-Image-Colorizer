@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from models.colorize_unet import UNetColorize
 
-model_path = os.path.join(project_root, 'models', 'saved_models', 'colorize_epoch_5.pth')
+model_path = os.path.join(project_root, 'models', 'saved_models', 'best_model.pth')
 sys.path.insert(0, project_root)
 
 def log_memory_usage():
